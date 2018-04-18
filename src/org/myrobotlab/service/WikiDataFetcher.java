@@ -31,17 +31,26 @@ public class WikiDataFetcher extends Service {
 
   public final static Logger log = LoggerFactory.getLogger(WikiDataFetcher.class);
 
-  String language = "en";
-  String website = "enwiki";
+  static String language = "en";
+  static String website = "enwiki";
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
 
     try {
+      WikiDataFetcher wiki = (WikiDataFetcher) Runtime.start("wikiDataFetcher", "WikiDataFetcher");
+      wiki.setWebSite("enwiki");
+      wiki.setLanguage("en");
 
-      Runtime.start("wikiDataFetcher", "WikiDataFetcher");
-      Runtime.start("gui", "GUIService");
+      EntityDocument doc = WikiDataFetcher.getWiki("Halloween");
+
+      log.info(getData("united states", "P36"));
+
+      log.info(doc.toString());
+
+      log.info(getData("eiffel tower", "P2048"));
+      
+      log.info(getData("nothing to test", "P2048"));
 
     } catch (Exception e) {
       Logging.logError(e);
@@ -69,7 +78,7 @@ public class WikiDataFetcher extends Service {
     website = site;
   }
 
-  private EntityDocument getWiki(String query) throws MediaWikiApiErrorException {
+  private static EntityDocument getWiki(String query) throws MediaWikiApiErrorException {
     WikibaseDataFetcher wbdf = WikibaseDataFetcher.getWikidataDataFetcher();
     query = upperCaseAllFirst(query);
     EntityDocument wiki = wbdf.getEntityDocumentByTitle(website, query);
@@ -79,7 +88,7 @@ public class WikiDataFetcher extends Service {
     return wiki;
   }
 
-  private EntityDocument getWikiById(String query) throws MediaWikiApiErrorException {
+  private static EntityDocument getWikiById(String query) throws MediaWikiApiErrorException {
     WikibaseDataFetcher wbdf = WikibaseDataFetcher.getWikidataDataFetcher();
     EntityDocument wiki = wbdf.getEntityDocument(upperCaseAllFirst(query));
     // System.out.println( (String) wiki.getEntityId().getId());
@@ -135,7 +144,7 @@ public class WikiDataFetcher extends Service {
     }
   }
 
-  public String getLabelById(String query) throws MediaWikiApiErrorException {
+  public static String getLabelById(String query) throws MediaWikiApiErrorException {
     EntityDocument document = getWikiById(query);
     try {
       String answer = ((ItemDocument) document).getLabels().get(language).getText();
@@ -146,13 +155,13 @@ public class WikiDataFetcher extends Service {
   }
 
   public String cutStart(String sentence) throws MediaWikiApiErrorException {// Remove
-                                                                             // the
-                                                                             // first
-                                                                             // word
-                                                                             // (The
-                                                                             // cat
-                                                                             // ->
-                                                                             // The)
+    // the
+    // first
+    // word
+    // (The
+    // cat
+    // ->
+    // The)
     try {
       if (sentence.indexOf(" ") != -1) {
         String answer = sentence.substring(sentence.indexOf(" ") + 1);
@@ -167,14 +176,14 @@ public class WikiDataFetcher extends Service {
   }
 
   public String grabStart(String sentence) throws MediaWikiApiErrorException {// keep
-                                                                              // only
-                                                                              // the
-                                                                              // first
-                                                                              // word
-                                                                              // (The
-                                                                              // cat
-                                                                              // ->
-                                                                              // cat)
+    // only
+    // the
+    // first
+    // word
+    // (The
+    // cat
+    // ->
+    // cat)
     try {
       if (sentence.indexOf(" ") != -1) {
         String answer = sentence.substring(0, sentence.indexOf(" "));
@@ -213,13 +222,14 @@ public class WikiDataFetcher extends Service {
     return new String(array);
   }
 
-  private List<StatementGroup> getStatementGroup(String query) throws MediaWikiApiErrorException {
+  private static List<StatementGroup> getStatementGroup(String query) throws MediaWikiApiErrorException {
     EntityDocument document = getWiki(query);
     return ((ItemDocument) document).getStatementGroups();
   }
 
-  private ArrayList<Object> getSnak(String query, String ID) throws MediaWikiApiErrorException {
-    // TODO: parameterize these data / al objects and parameterize the return
+  private static ArrayList<Object> getSnak(String query, String ID) throws MediaWikiApiErrorException {
+    // TODO: parameterize these data / al objects and parameterize the
+    // return
     // value of this function.
     List<StatementGroup> document = getStatementGroup(query);
     String dataType = "error";
@@ -228,7 +238,8 @@ public class WikiDataFetcher extends Service {
     for (StatementGroup sg : document) {
       ID = ID.replaceAll("[\r\n]+", "");
       String testedID = sg.getProperty().getId();
-      if (ID.equals(testedID)) { // Check if this ID exist for this document
+      if (ID.equals(testedID)) { // Check if this ID exist for this
+        // document
         System.out.println("Found !");
         for (Statement s : sg.getStatements()) {
           if (s.getClaim().getMainSnak() instanceof ValueSnak) {
@@ -246,65 +257,68 @@ public class WikiDataFetcher extends Service {
     return al;
   }
 
-  public String getData(String query, String ID) throws MediaWikiApiErrorException {
+  public static String getData(String query, String ID) throws MediaWikiApiErrorException {
+    // remove the try for dubug :
+    // https://github.com/MyRobotLab/myrobotlab/issues/94
     try {
-      ArrayList<Object> al = getSnak(query, ID);
-      // TODO manage all snaks and qualifiers
-      Value data = ((JacksonValueSnak) al.get(1)).getDatavalue();
-      String dataType = (String) al.get(0);
-      String answer = "";
-      System.out.print("Datatype : " + dataType);
-      // TODO put switch in a function out of getData()
-      switch (dataType) {
-        case "wikibase-item"://
-          String info = (String) data.toString();
-          int beginIndex = info.indexOf('Q');
-          int endIndex = info.indexOf("(");
-          info = info.substring(beginIndex, endIndex - 1);
-          answer = getLabelById(info);
-          break;
-        case "time"://
-          data = (TimeValue) data;
-          answer = String.valueOf(((TimeValue) data).getDay()) + "/" + String.valueOf(((TimeValue) data).getMonth()) + "/" + String.valueOf(((TimeValue) data).getYear());
-          break;
-        case "globe-coordinate":
-          answer = ((GlobeCoordinatesValue) data).toString();
-          break;
-        case "monolingualtext"://
-          data = (MonolingualTextValue) data;
-          answer = data.toString();
-          break;
-        case "quantity"://
-          data = (QuantityValue) data;
-          String quantity = String.valueOf(((QuantityValue) data).getNumericValue());
-          String unit = data.toString();
-          int beginIndex2 = unit.indexOf('Q');
-          if (beginIndex2 != -1) {
-            unit = unit.substring(beginIndex2);
-            if (Long.parseLong(quantity, 16) < 2) {
-              quantity += " " + getLabelById(unit);
-            } else {
-              quantity += " " + getLabelById(unit) + "s";
-            }
+    ArrayList<Object> al = getSnak(query, ID);
+    // TODO manage all snaks and qualifiers
+    Value data = ((JacksonValueSnak) al.get(1)).getDatavalue();
+    String dataType = (String) al.get(0);
+    String answer = "";
+    System.out.print("Datatype : " + dataType);
+    // TODO put switch in a function out of getData()
+    switch (dataType) {
+      case "wikibase-item"://
+        String info = (String) data.toString();
+        int beginIndex = info.indexOf('Q');
+        int endIndex = info.indexOf("(");
+        info = info.substring(beginIndex, endIndex - 1);
+        answer = getLabelById(info);
+        break;
+      case "time"://
+        data = (TimeValue) data;
+        answer = String.valueOf(((TimeValue) data).getDay()) + "/" + String.valueOf(((TimeValue) data).getMonth()) + "/" + String.valueOf(((TimeValue) data).getYear());
+        break;
+      case "globe-coordinate":
+        answer = ((GlobeCoordinatesValue) data).toString();
+        break;
+      case "monolingualtext"://
+        data = (MonolingualTextValue) data;
+        answer = data.toString();
+        break;
+      case "quantity"://
+        data = (QuantityValue) data;
+        String quantity = String.valueOf(((QuantityValue) data).getNumericValue());
+        String unit = String.valueOf(((QuantityValue) data).getUnit());
+        // String unit = data.toString();
+        int beginIndex2 = unit.indexOf('Q');
+        if (beginIndex2 != -1) {
+          unit = unit.substring(beginIndex2);
+          if (Long.parseLong(quantity, 16) < 2) {
+            quantity += " " + getLabelById(unit);
+          } else {
+            quantity += " " + getLabelById(unit) + "s";
           }
-          answer = quantity;
-          break;
-        case "propertyId":
-          answer = ((PropertyIdValue) data).toString();
-          break;
-        case "url"://
-          answer = data.toString();
-          break;
-        case "commonsMedia":
-          answer = data.toString();
-          break;
-        default:
-          answer = "Not Found !";
-          break;
-      }
-      return answer;
+        }
+        answer = quantity;
+        break;
+      case "propertyId":
+        answer = ((PropertyIdValue) data).toString();
+        break;
+      case "url"://
+        answer = data.toString();
+        break;
+      case "commonsMedia":
+        answer = data.toString();
+        break;
+      default:
+        answer = "Not Found !";
+        break;
+    }
+    return answer;
     } catch (Exception e) {
-      return "Not Found !";
+    return "Not Found !";
     }
   }
 
@@ -410,10 +424,14 @@ public class WikiDataFetcher extends Service {
   static public ServiceType getMetaData() {
 
     ServiceType meta = new ServiceType(WikiDataFetcher.class.getCanonicalName());
-    meta.addDescription("service interface for Wikipedia");
+    meta.addDescription("This service grab data from wikidata website");
     meta.addCategory("intelligence");
-    meta.addDependency("org.wikidata.wdtk", "0.7.0");
-    meta.addDependency("org.apache.commons.httpclient", "4.2.5");
+    meta.setSponsor("beetlejuice");
+    meta.addDependency("org.wikidata.wdtk", "0.8.0-SNAPSHOT");
+    meta.addDependency("org.apache.commons.httpclient", "4.5.2");
+    meta.addDependency("org.apache.commons.commons-lang3", "3.3.2");
+    meta.addDependency("com.fasterxml.jackson.core", "2.5.0");
+    meta.setCloudService(true);
     return meta;
   }
 

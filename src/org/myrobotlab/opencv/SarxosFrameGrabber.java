@@ -9,6 +9,7 @@ import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.Java2DFrameConverter;
 import org.myrobotlab.logging.LoggerFactory;
 import org.slf4j.Logger;
+
 import com.github.sarxos.webcam.Webcam;
 
 public class SarxosFrameGrabber extends FrameGrabber {
@@ -19,7 +20,7 @@ public class SarxosFrameGrabber extends FrameGrabber {
   private int cameraIndex = 0;
   public int desiredWidth = 640;
   public int desiredHeight = 480;
-  private Java2DFrameConverter converter = new Java2DFrameConverter();
+  transient private Java2DFrameConverter converter = new Java2DFrameConverter();
 
   public SarxosFrameGrabber(int cameraIndex) {
     super();

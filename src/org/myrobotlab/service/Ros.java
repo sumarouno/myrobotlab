@@ -15,13 +15,12 @@ public class Ros extends Service {
   public final static Logger log = LoggerFactory.getLogger(Ros.class.getCanonicalName());
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.WARN);
+    LoggingFactory.init(Level.WARN);
     try {
       Ros ros = new Ros("ros");
       ros.startService();
       /*
-       * GUIService gui = new GUIService("gui"); gui.startService();
+       * SwingGui gui = new SwingGui("gui"); gui.startService();
        */
 
     } catch (Exception e) {
@@ -51,6 +50,7 @@ public class Ros extends Service {
     meta.addDescription("interface to Ros");
     meta.addCategory("bridge");
     meta.addPeer("serial", "Serial", "serial");
+    meta.setAvailable(false);
 
     return meta;
   }

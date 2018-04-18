@@ -25,8 +25,8 @@
 
 package org.myrobotlab.service;
 
-import org.jfugue.Player;
-import org.jfugue.Rhythm;
+import org.jfugue.player.Player;
+import org.jfugue.rhythm.Rhythm;
 import org.myrobotlab.framework.Service;
 import org.myrobotlab.framework.ServiceType;
 import org.myrobotlab.logging.Level;
@@ -50,8 +50,7 @@ public class JFugue extends Service {
   // TODO - look at JavaSoundDemo - they have a synth & mixer there
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.DEBUG);
+    LoggingFactory.init(Level.DEBUG);
     JFugue jfugue = (JFugue) Runtime.start("jfugue", "JFugue");
     jfugue.play("C");
     jfugue.playRythm("O..oO...O..oOO..");
@@ -79,8 +78,8 @@ public class JFugue extends Service {
 
   public void playRythm(String data) {
     Rhythm rhythm = new Rhythm();
-    rhythm.setLayer(1, data);
-    play(rhythm);
+    rhythm.addLayer(data);
+    player.play(rhythm.getPattern());
     /*
      * rhythm.setLayer(1, "O..oO...O..oOO.."); rhythm.setLayer(2,
      * "..*...*...*...*."); rhythm.addSubstitution('O', "[BASS_DRUM]i");
@@ -108,5 +107,7 @@ public class JFugue extends Service {
     meta.addDependency("org.jfugue.music", "5.0");
     return meta;
   }
+
+
 
 }

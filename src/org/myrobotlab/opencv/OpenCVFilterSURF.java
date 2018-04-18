@@ -49,10 +49,10 @@ public class OpenCVFilterSURF extends OpenCVFilter {
 
   private static final long serialVersionUID = 1L;
 
-  public final static Logger log = LoggerFactory.getLogger(OpenCVFilterSURF.class.getCanonicalName());
+  public final static Logger log = LoggerFactory.getLogger(OpenCVFilterSURF.class);
   public Settings settings = new Settings();
   public ObjectFinder objectFinder = null;
-  private IplImage object = null;
+  transient private IplImage object = null;
 
   public OpenCVFilterSURF() {
     super();
@@ -205,10 +205,8 @@ public class OpenCVFilterSURF extends OpenCVFilter {
     return b;
   }
 
-  /**
+  /*
    * Set the reference object to find with the surf filter.
-   * 
-   * @param image
    */
   public void setObjectImage(IplImage image) {
     this.object = image;

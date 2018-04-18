@@ -8,20 +8,22 @@ angular.module('mrlapp.service.ArduinoGui', []).controller('ArduinoGuiCtrl', ['$
     $scope.image = "service/arduino/Uno.png";
     $scope.connectedStatus = "";
     $scope.versionStatus = "";
-    $scope.boardStatus = 0;
-    $scope.singleModel = 0;    
-    // The MrlComm object !
-    // this represents the state of MrlComm
-    // and (potentially) all its state data
-    $scope.mrlComm = {
+    // $scope.boardInfo = 0;
+    $scope.singleModel = 0; 
+
+    $scope.boardInfo = {
         "boardType": null,
         "deviceCount": null ,
         "deviceList": null ,
-        "enableBoardStatus":false,
+        "enableBoardInfo":false,
         "sram": null ,
         "us": null ,
         "version": null
-    };
+    }   
+
+    // for port directive
+    $scope.portDirectiveScope = {};
+    
     // Status - from the Arduino service
     $scope.statusLine = "";
     this.updateState = function(service) {
@@ -47,9 +49,12 @@ angular.module('mrlapp.service.ArduinoGui', []).controller('ArduinoGuiCtrl', ['$
         } else {
             $scope.versionStatus = null ;
         }
+        // infinite loop
+        /*
         if ($scope.isConnected) {
-            msg.send("getVersion");
+            msg.send("getBoardInfo");
         }
+        */
     }
     ;
     _self.updateState($scope.service);
@@ -74,7 +79,8 @@ angular.module('mrlapp.service.ArduinoGui', []).controller('ArduinoGuiCtrl', ['$
             $scope.$apply();
             break;
         case 'onBoardInfo':
-            $scope.mrlCommStatus = data;
+            $scope.boardInfo = data;
+            $scope.$apply();
             break;
         case 'onVersion':
             $scope.version = data;
@@ -93,12 +99,7 @@ angular.module('mrlapp.service.ArduinoGui', []).controller('ArduinoGuiCtrl', ['$
             // FIXME - SHOULD BE MODIFYING PARENT'S STATUS
             // $scope.updateState(data);
             // $scope.$apply();
-            break;
-        case 'onBoardStatus':
-                $scope.mrlComm.us = data.us;
-                $scope.mrlComm.sram = data.sram;
-                $scope.mrlComm.deviceCount = data.deviceCount;
-            break;
+            break;        
         case 'onPin':
             break;
         case 'onTX':
@@ -119,8 +120,22 @@ angular.module('mrlapp.service.ArduinoGui', []).controller('ArduinoGuiCtrl', ['$
         }
     }
     ;
-    $scope.setArduinoPath = function(arduinoPath, port, type) {
-        msg.send('uploadSketch', arduinoPath, port, type);
+    $scope.upload = function(arduinoPath, portDirectiveScope, type) {
+        // FIXME !!! - nicer global check empty method
+        // FIXME !!! - parent error warn info - publishes to the appropriate service
+        if (angular.isUndefined(arduinoPath) || arduinoPath == null || arduinoPath == "" ){
+            msg.send('error', 'arduino path is not set');
+            return;
+        }
+        if (angular.isUndefined(portDirectiveScope) || portDirectiveScope.portName == null || portDirectiveScope.portName == "" ){
+            msg.send('error', 'port name not set');
+            return;
+        }
+        if (angular.isUndefined(type) || type == null || type == "" ){
+            msg.send('error', 'board type not set');
+            return;
+        }
+        msg.send('uploadSketch', arduinoPath, portDirectiveScope.portName, type);
     }
     ;
     $scope.aceLoaded = function(editor) {
@@ -141,7 +156,7 @@ angular.module('mrlapp.service.ArduinoGui', []).controller('ArduinoGuiCtrl', ['$
     // get version
     msg.subscribe('publishVersion');
     msg.subscribe('publishBoardInfo');
-    msg.subscribe('publishBoardStatus');
+    msg.subscribe('publishBoardInfo');
    // msg.subscribe('publishSensorData');
     msg.subscribe(this);
 }

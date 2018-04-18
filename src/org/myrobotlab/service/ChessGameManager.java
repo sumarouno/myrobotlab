@@ -6,6 +6,7 @@ import org.myrobotlab.logging.Level;
 import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.logging.Logging;
 import org.myrobotlab.logging.LoggingFactory;
+import org.myrobotlab.service.interfaces.SerialDevice;
 import org.myrobotlab.service.interfaces.SpeechSynthesis;
 import org.slf4j.Logger;
 
@@ -16,18 +17,17 @@ public class ChessGameManager extends Service {
   public final static Logger log = LoggerFactory.getLogger(ChessGameManager.class);
 
   transient WebGui webgui;
-  transient Serial serial;
+  transient SerialDevice serial;
   transient SpeechSynthesis speech;
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
 
     try {
 
       Runtime.start("chessgame", "ChessGameManager");
 
-      Runtime.start("gui", "GUIService");
+      Runtime.start("gui", "SwingGui");
 
     } catch (Exception e) {
       Logging.logError(e);
@@ -53,7 +53,8 @@ public class ChessGameManager extends Service {
     meta.addCategory("game");
     meta.addPeer("webgui", "WebGui", "webgui");
     meta.addPeer("serial", "Serial", "serial");
-    meta.addPeer("speech", "AcapelaSpeech", "speech");
+    meta.addPeer("speech", "MarySpeech", "speech");
+    meta.setAvailable(false);
     return meta;
   }
 

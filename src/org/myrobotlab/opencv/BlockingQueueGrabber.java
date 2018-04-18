@@ -13,8 +13,8 @@ public class BlockingQueueGrabber extends FrameGrabber {
 
   public final static Logger log = LoggerFactory.getLogger(BlockingQueueGrabber.class.getCanonicalName());
 
-  BlockingQueue<Frame> blockingData;
-
+  transient BlockingQueue<Frame> blockingData;
+  
   public BlockingQueueGrabber(BlockingQueue<Frame> queue) {
     blockingData = queue;
   }

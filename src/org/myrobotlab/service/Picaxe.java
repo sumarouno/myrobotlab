@@ -42,7 +42,7 @@ import org.slf4j.Logger;
  * http://arduino.cc/en/Main/ArduinoBoardDuemilanove
  * 
  * - Find Arduino Message set - DigitalWrite (pin, data?) - ArduinoProgram
- * HashMap<Key, Program> - loadProgram (Key) - key - default key & program
+ * HashMap&lt;Key, Program&gt; - loadProgram (Key) - key - default key &amp; program
  * 
  * References: http://www.arduino.cc/playground/Main/RotaryEncoders
  * 
@@ -102,8 +102,7 @@ public class Picaxe extends Service // implements SerialPortEventListener,
   public transient PICAXEThread myPICAXE = null;
 
   public static void main(String[] args) throws Exception {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.DEBUG);
+    LoggingFactory.init(Level.DEBUG);
 
     // RemoteAdapter remote = new RemoteAdapter("remote");
     // remote.startService();
@@ -117,7 +116,7 @@ public class Picaxe extends Service // implements SerialPortEventListener,
 
     // PICAXE.addListener("pulse", "log", "log", Integer.class);
 
-    // GUIService gui = new GUIService("gui");
+    // SwingGui gui = new SwingGui("gui");
     // gui.startService();
     //
 
@@ -262,6 +261,7 @@ public class Picaxe extends Service // implements SerialPortEventListener,
     meta.addDescription("Picaxe microcontroller");
     meta.addCategory("microcontroller");
     meta.addPeer("serial", "Serial", "serial service");
+    meta.setAvailable(false);
     return meta;
   }
 

@@ -121,13 +121,9 @@ public class MjpegServer extends NanoHTTPD {
 
   transient public HashMap<String, VideoWebClient> clients = new HashMap<String, VideoWebClient>();
 
-  /**
-   * @param args
-   */
   public static void main(String[] args) {
     try {
-      LoggingFactory.getInstance().configure();
-      LoggingFactory.getInstance().setLevel(Level.INFO);
+      LoggingFactory.init(Level.INFO);
       MjpegServer server = new MjpegServer(9090);
       server.start();
       log.info("here");

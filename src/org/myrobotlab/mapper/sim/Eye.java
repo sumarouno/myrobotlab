@@ -65,7 +65,7 @@ public class Eye extends SensorDevice {
    */
   public class EyeJPanel extends JPanel {
     private static final long serialVersionUID = 1L;
-    BufferedImage bim;
+    transient BufferedImage bim;
 
     public EyeJPanel() {
       Dimension d = new Dimension(imageWidth, imageHeight);
@@ -130,7 +130,7 @@ public class Eye extends SensorDevice {
 
   protected int tempRGBABuffer[];
   // the rendered offscreen image
-  BufferedImage visionImage;
+  transient BufferedImage visionImage;
 
   protected int imageWidth;
 
@@ -190,12 +190,12 @@ public class Eye extends SensorDevice {
     }
   }
 
-  /** for allocating a working copy of the vision image */
+  /* for allocating a working copy of the vision image */
   final public BufferedImage createCompatibleImage() {
     return new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
   }
 
-  /** for allocating a SensorMatrix compabtible with device dimensions */
+  /* for allocating a SensorMatrix compabtible with device dimensions */
   final public SensorMatrix createCompatibleSensorMatrix() {
     return new SensorMatrix(imageWidth, imageHeight);
 

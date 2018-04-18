@@ -21,7 +21,9 @@ import org.apache.http.auth.params.AuthPNames;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.AuthPolicy;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -55,15 +57,15 @@ import com.pi4j.io.i2c.I2CFactory;
  * 
  * @author GroG
  * 
- *         C:\mrl\myrobotlab>xjc -d src -p org.myrobotlab.pickToLight
+ *         C:\mrl\myrobotlab&gt;xjc -d src -p org.myrobotlab.pickToLight
  *         PickToLightTypes.xsd
  * 
- *         TODO - post report & statistics TODO - update URI - meta data - make
+ *         TODO - post report &amp; statistics TODO - update URI - meta data - make
  *         update.jar bin calls moduleList calls setAllBoxesLEDs (on off)
  *         setBoxesOn(String list) setBoxesOff(String list) getBesSwitchState()
  *         displayString(boxlist, str) ZOD update uri blinkOff TODO - automated
  *         registration Polling / Sensor - important - check sensor state FIXME
- *         - EROR is not being handled in non IP address & no connectivity !!!!
+ *         - EROR is not being handled in non IP address &amp; no connectivity !!!!
  *         - read config in /boot/ - registration url including password - proxy
  *         ?
  * 
@@ -274,8 +276,7 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
   Properties properties = new Properties();
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.DEBUG);
+    LoggingFactory.init(Level.DEBUG);
 
     try {
       // Runtime.getStartInfo();
@@ -349,7 +350,7 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
 
       // Runtime.createAndStart("webgui", "WebGui");
       /*
-       * GUIService gui = new GUIService("gui"); gui.startService();
+       * SwingGui gui = new SwingGui("gui"); gui.startService();
        */
     } catch (Exception e) {
       Logging.logError(e);
@@ -674,13 +675,15 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
     String ret = "";
 
     try {
-      DefaultHttpClient httpclient = new DefaultHttpClient();
+      CloseableHttpClient client = HttpClients.createDefault();
       List<String> authpref = new ArrayList<String>();
+      /* ALL DEPRECATED
       authpref.add(AuthPolicy.NTLM);
-      httpclient.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF, authpref);
+      client.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF, authpref);
       NTCredentials creds = new NTCredentials(mesUser, mesPassword, "", mesDomain);
-      httpclient.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
-
+      client.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
+	  */
+      
       HttpContext localContext = new BasicHttpContext();
       HttpPost post = new HttpPost(mesEndpoint);
 
@@ -692,7 +695,7 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
       post.addHeader("SOAPAction", soapAction);
       post.addHeader("Content-Type", "text/xml; charset=utf-8");
 
-      HttpResponse response = httpclient.execute(post, localContext);
+      HttpResponse response = client.execute(post, localContext);
       HttpEntity entity = response.getEntity();
       ret = EntityUtils.toString(entity);
 
@@ -833,8 +836,8 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
       properties.load(input);
 
       if ("true".equalsIgnoreCase(properties.getProperty("xmpp.enabled"))) {
-        // Xmpp xmpp = (Xmpp) Runtime.createAndStart("xmpp", "XMPP");
-        Runtime.createAndStart("xmpp", "XMPP");
+        // Xmpp xmpp = (Xmpp) Runtime.createAndStart("xmpp", "Xmpp");
+        Runtime.createAndStart("xmpp", "Xmpp");
         // xmpp.connect(properties.getProperty("xmpp.user"),
         // properties.getProperty("xmpp.password"));
         // FIXME - xmpp.addAuditor("Greg Perry");
@@ -860,12 +863,9 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
     return properties;
   }
 
-  /**
+  /*
    * single location for key generation - in case other parts are add in a
    * composite key
-   * 
-   * @param address
-   * @return
    */
   public String makeKey(Integer address) {
     return makeKey(rasPiBus, address);
@@ -979,12 +979,12 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
     String ret = "";
 
     try {
-      DefaultHttpClient httpclient = new DefaultHttpClient();
+      DefaultHttpClient client = new DefaultHttpClient();
       List<String> authpref = new ArrayList<String>();
       authpref.add(AuthPolicy.NTLM);
-      httpclient.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF, authpref);
+      client.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF, authpref);
       NTCredentials creds = new NTCredentials(mesUser, mesPassword, "", mesDomain);
-      httpclient.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
+      client.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
 
       HttpContext localContext = new BasicHttpContext();
       HttpPost post = new HttpPost(mesEndpoint);
@@ -997,7 +997,7 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
       post.addHeader("SOAPAction", soapAction);
       post.addHeader("Content-Type", "text/xml; charset=utf-8");
 
-      HttpResponse response = httpclient.execute(post, localContext);
+      HttpResponse response = client.execute(post, localContext);
       HttpEntity entity = response.getEntity();
       ret = EntityUtils.toString(entity);
 
@@ -1162,7 +1162,10 @@ public class PickToLight extends Service implements GpioPinListenerDigital {
     meta.addPeer("raspi", "RasPi", "raspi");
     meta.addPeer("webgui", "WebGui", "web server interface");
     // FIXME - should use static methos from HttpClient
-    meta.addDependency("org.apache.commons.httpclient", "4.2.5");
+    meta.addDependency("org.apache.commons.httpclient", "4.5.2");
+    // FIXME - to specific to a partical hardware setup
+    // good idea though
+    meta.setAvailable(false);
 
     return meta;
   }

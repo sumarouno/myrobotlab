@@ -23,8 +23,7 @@ public class InverseKinematics extends Service {
   public final static Logger log = LoggerFactory.getLogger(InverseKinematics.class.getCanonicalName());
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
     InverseKinematics inversekinematics = new InverseKinematics("inversekinematics");
     inversekinematics.setDOF(3);
     inversekinematics.setStructure(0, 100);
@@ -33,9 +32,9 @@ public class InverseKinematics extends Service {
     inversekinematics.setPoint(200, 200, 200);
     inversekinematics.compute();
 
-    Runtime.createAndStart("gui", "GUIService");
+    Runtime.createAndStart("gui", "SwingGui");
     /*
-     * GUIService gui = new GUIService("gui"); gui.startService();
+     * SwingGui gui = new SwingGui("gui"); gui.startService();
      */
   }
 

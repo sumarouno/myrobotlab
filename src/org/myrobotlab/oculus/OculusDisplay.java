@@ -47,7 +47,7 @@ import org.myrobotlab.oculus.lwjgl.shaders.StaticShader;
 import org.myrobotlab.oculus.lwjgl.textures.ModelTexture;
 import org.myrobotlab.service.OculusRift;
 import org.myrobotlab.service.OculusRift.RiftFrame;
-import org.myrobotlab.service.data.OculusData;
+import org.myrobotlab.service.data.Orientation;
 import org.saintandreas.gl.FrameBuffer;
 import org.saintandreas.gl.MatrixStack;
 import org.saintandreas.gl.buffers.VertexArray;
@@ -144,7 +144,7 @@ public class OculusDisplay implements Runnable {
   private static Renderer renderer;
   private static StaticShader shader;
 
-  public OculusData orientationInfo;
+  public Orientation orientationInfo;
 
   // the raw model for the screen in VR.
   // private RawModel model = null;
@@ -162,7 +162,7 @@ public class OculusDisplay implements Runnable {
     hmd.recenterPose();
   }
 
-  public void updateOrientation(OculusData orientation) {
+  public void updateOrientation(Orientation orientation) {
     //
     this.orientationInfo = orientation;
   }
@@ -199,15 +199,16 @@ public class OculusDisplay implements Runnable {
   private void internalInit() {
     // constructor
     // start up hmd libs
-    Hmd.initialize();
-    try {
-      Thread.sleep(400);
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(e);
+    if (hmd == null) {
+      Hmd.initialize();
+      try {
+        Thread.sleep(400);
+      } catch (InterruptedException e) {
+        throw new IllegalStateException(e);
+      }
+      // create it  (this should be owned by the Oculus service i think? and passed in with setHmd(hmd)
+      hmd = Hmd.create();
     }
-
-    // create it
-    hmd = Hmd.create();
     if (null == hmd) {
       throw new IllegalStateException("Unable to initialize HMD");
     }
@@ -484,10 +485,10 @@ public class OculusDisplay implements Runnable {
     VertexArray.unbind();
   }
 
-  /**
+  /*
    * helper function to render an image on the current bound texture.
    */
-  public void renderScreen(SerializableImage img, OculusData orientation) {
+  public void renderScreen(SerializableImage img, Orientation orientation) {
 
     if (img != null) {
       log.info("Image height {} width {}", img.getHeight(), img.getWidth());
@@ -547,6 +548,14 @@ public class OculusDisplay implements Runnable {
     // TODO : noop
     OculusDisplay test = new OculusDisplay();
     test.run();
+  }
+
+  public Hmd getHmd() {
+    return hmd;
+  }
+
+  public void setHmd(Hmd hmd) {
+    this.hmd = hmd;
   }
 
 }

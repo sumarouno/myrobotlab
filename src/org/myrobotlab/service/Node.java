@@ -27,7 +27,7 @@ public class Node extends Service {
   }
 
   private static final String SCRIPT = "" + "var main = require('./project/main.js');" + "main.run();";
-  final ScriptEngineManager manager = new ScriptEngineManager();
+  transient final ScriptEngineManager manager = new ScriptEngineManager();
 
   public void runMain(String... args) throws InterruptedException {
 
@@ -80,13 +80,12 @@ public class Node extends Service {
   }
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
 
     try {
 
       Node node = (Node) Runtime.start("node", "Node");
-      // Runtime.start("gui", "GUIService");
+      // Runtime.start("gui", "SwingGui");
       node.runMain((String[])null);
 
     } catch (Exception e) {

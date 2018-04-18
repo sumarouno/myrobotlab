@@ -1,7 +1,8 @@
 package org.myrobotlab.logging;
 
-import java.io.File;
+import java.nio.charset.StandardCharsets;
 
+import org.apache.log4j.DailyRollingFileAppender;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
@@ -25,6 +26,8 @@ public class LoggingSLF4J extends Logging {
   public void addAppender(String type) {
     addAppender(type, null);
   }
+  
+  // http://stackoverflow.com/questions/7824620/logback-set-log-file-name-programmatically
 
   @Override
   public void addAppender(String type, String filename) {
@@ -38,6 +41,7 @@ public class LoggingSLF4J extends Logging {
     PatternLayoutEncoder ple = new PatternLayoutEncoder();
 
     // %date
+    ple.setCharset(StandardCharsets.UTF_8);
     ple.setPattern("%date{HH:mm:ss.SSS} [%thread] %level %logger{10} [%file:%line] %msg%n");
     ple.setContext(lc);
     ple.start();
@@ -59,9 +63,10 @@ public class LoggingSLF4J extends Logging {
     } else if (Appender.FILE.equalsIgnoreCase(type)) {
       FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
       fileAppender.setName(type);
-      fileAppender.setFile("myrobotlab.log"); // my
+      fileAppender.setFile(LoggingFactory.getLogFileName());
       fileAppender.setEncoder(ple);
       fileAppender.setContext(lc);
+      fileAppender.setAppend(false);
       fileAppender.start();
       logger.addAppender(fileAppender);
     } else if (Appender.IS_AGENT.equalsIgnoreCase(type)) {
@@ -81,13 +86,15 @@ public class LoggingSLF4J extends Logging {
       console.setEncoder(ple);
       console.setContext(lc);
       logger.addAppender(console);
-
-      // file
+      
+      // grr DailyRollingFileAppender f = new DailyRollingFileAppender();
 
       FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
       fileAppender.setName(String.format("%s.%s", Appender.IS_AGENT, Appender.FILE));
-      fileAppender.setFile(String.format("%s%smyrobotlab.log", System.getProperty("user.dir"), File.separator));
+      // fileAppender.setFile(String.format("%s%smyrobotlabz.log", System.getProperty("user.dir"), File.separator));
+      fileAppender.setFile(LoggingFactory.getLogFileName());
       fileAppender.setEncoder(ple);
+      fileAppender.setAppend(false);
       fileAppender.setContext(lc);
       fileAppender.start();
 
@@ -101,7 +108,7 @@ public class LoggingSLF4J extends Logging {
       // shorter layout than Agent - since everything will be
       // prepended to Agent's log prefix
       // layout = new PatternLayout("[%t] %-5p %c %x - %m%n");
-      // TODO - add PID or runtime Name ! process index ?
+      // TODO - add Pid or runtime Name ! process index ?
       // layout = new PatternLayout("[%t] %-5p %c %x - %m%n"); SHORT
       // PATTERN ???
       // appender = new RollingFileAppender(layout,

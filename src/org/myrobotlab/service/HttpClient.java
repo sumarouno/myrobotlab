@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.httpclient.HttpException;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -42,10 +41,12 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.myrobotlab.framework.Service;
 import org.myrobotlab.framework.ServiceType;
+import org.myrobotlab.framework.interfaces.ServiceInterface;
 import org.myrobotlab.logging.Level;
 import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.logging.Logging;
@@ -53,7 +54,6 @@ import org.myrobotlab.logging.LoggingFactory;
 import org.myrobotlab.service.data.HttpData;
 import org.myrobotlab.service.interfaces.HttpDataListener;
 import org.myrobotlab.service.interfaces.HttpResponseListener;
-import org.myrobotlab.service.interfaces.ServiceInterface;
 import org.slf4j.Logger;
 
 /**
@@ -62,18 +62,16 @@ import org.slf4j.Logger;
  * @author GroG
  * 
  *         TODO - asynchronous call back similar to AngularJS promise - or at
- *         least a callback method is call .. onHttpResponse
+ *         least a callback method is called .. onHttpResponse
  * 
- *         Synchronous or Asynchrounous - Synchronous by default, Asynchronous
+ *         Synchronous or Asynchronous - Synchronous by default, Asynchronous
  *         if a callback method is supplied or Non-Blocking method is called
+ *         
+ *         Check out - Fluent interface - https://hc.apache.org/httpcomponents-client-ga/tutorial/html/fluent.html
  */
 public class HttpClient extends Service implements HttpDataListener, HttpResponseListener {
 
   private static final long serialVersionUID = 1L;
-
-  // this httpclient should be thread safe -
-  // transient org.apache.commons.httpclient.De client = null;
-  // DefaultHttpClient client = new DefaultHttpClient();
 
   public final static Logger log = LoggerFactory.getLogger(HttpClient.class);
 
@@ -88,13 +86,14 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
   static public ServiceType getMetaData() {
 
     ServiceType meta = new ServiceType(HttpClient.class.getCanonicalName());
-    meta.addDescription("an HTTP client, used to fetch information on the web");
+    meta.addDescription("a general purpose http client, used to fetch information on the web");
     meta.addCategory("network");
-    meta.addDependency("org.apache.commons.httpclient", "4.2.5");
+    meta.addDependency("org.apache.commons.httpclient", "4.5.2");
+    meta.setCloudService(true);
     return meta;
   }
 
-  transient DefaultHttpClient client;
+  transient CloseableHttpClient client;
 
   transient HashMap<String, String> formFields = new HashMap<String, String>();
 
@@ -142,7 +141,7 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
       return new String(response.data);
     }
     return null;
-  }
+  } 
 
   public byte[] getBytes(String uri) throws ClientProtocolException, IOException {
     return processResponse((HttpUriRequest) new HttpGet(uri), null).data;
@@ -161,8 +160,6 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
   /**
    * for testing purposes
    * 
-   * @param data
-   * @return
    */
   @Override
   public void onHttpResponse(String data) {
@@ -189,14 +186,16 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
     return processResponse((HttpUriRequest) new HttpPost(uri), fields).data;
   }
 
-  public HttpData processResponse(HttpUriRequest request, HashMap<String, String> fields) throws HttpException, IOException {
+  public HttpData processResponse(HttpUriRequest request, HashMap<String, String> fields) throws IOException {
     HttpData data = new HttpData(request.getURI().toString());
     if (fields == null) {
 
       fields = formFields;
     }
 
-    if (request.getClass().equals(HttpPost.class) && formFields.size() > 0) {
+    // Mats changed 2017-01-03. I think it was a bug 
+    // if (request.getClass().equals(HttpPost.class) && formFields.size() > 0)
+    if (request.getClass().equals(HttpPost.class) && fields.size() > 0) {
       List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(fields.size());
       for (String nvPairKey : fields.keySet()) {
         nameValuePairs.add(new BasicNameValuePair(nvPairKey, fields.get(nvPairKey)));
@@ -231,9 +230,9 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
    * 
    * contains more data than just the text, can be used for any content type
    * too, since the payload is in a byte[]
+   * @param data the http data
+   * @return the http data
    * 
-   * @param data
-   * @return
    */
   public HttpData publishHttpData(HttpData data) {
     return data;
@@ -242,9 +241,9 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
   /**
    * publishing point for any http request this is the asynchronous callback
    * which will arrive typically at onHttpRespone(data)
+   * @param data the data
+   * @return the data
    * 
-   * @param data
-   * @return
    */
   public String publishHttpResponse(String data) {
     return data;
@@ -254,7 +253,7 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
     super.startService();
     if (client == null) {
       // new MultiThreadedHttpConnectionManager()
-      client = new DefaultHttpClient();
+      client = HttpClients.createDefault();
     }
   }
 
@@ -268,12 +267,17 @@ public class HttpClient extends Service implements HttpDataListener, HttpRespons
   // TODO - authentication !
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
 
     try {
 
       HttpClient client = (HttpClient) Runtime.start("client", "HttpClient");
+      Runtime.start("gui", "SwingGui");
+      boolean done = true;
+      
+      if (done){
+        return;
+      }
       // this is how a listener might subscribe
       // TODO - put dynamically subscribing into framework
       // with interface inspection ??

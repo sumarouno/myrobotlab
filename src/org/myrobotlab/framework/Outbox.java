@@ -31,9 +31,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.myrobotlab.codec.CodecUtils;
+import org.myrobotlab.framework.interfaces.NameProvider;
 import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.service.interfaces.CommunicationInterface;
-import org.myrobotlab.service.interfaces.NameProvider;
 import org.slf4j.Logger;
 
 /*
@@ -142,7 +142,7 @@ public class Outbox implements Runnable, Serializable {
       // WARNING - broadcast apparently means name == ""
       // why would a message with my name be in my outbox ??? - FIXME
       // deprecate that logic
-      if (msg.name.length() > 0) { // commented out recently -> &&
+      if (msg.name != null) { // commented out recently -> &&
         // !myService.getName().equals(msg.name)
         log.debug("{} configured to RELAY ", msg.getName());
         comm.send(msg);

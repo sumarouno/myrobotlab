@@ -28,11 +28,12 @@ public class _TemplateService extends Service {
    */
   static public ServiceType getMetaData() {
 
-    ServiceType meta = new ServiceType(_TemplateService.class.getCanonicalName());
+    ServiceType meta = new ServiceType(_TemplateService.class);
     meta.addDescription("used as a general template");
     meta.setAvailable(true); // false if you do not want it viewable in a gui
     // add dependency if necessary
     // meta.addDependency("org.coolproject", "1.0.0");
+    meta.setAvailable(false);
     meta.addCategory("general");
     return meta;
   }
@@ -40,11 +41,11 @@ public class _TemplateService extends Service {
   public static void main(String[] args) {
     try {
 
-      LoggingFactory.getInstance().configure();
-      LoggingFactory.getInstance().setLevel(Level.INFO);
+      LoggingFactory.init(Level.INFO);
 
       Runtime.start("template", "_TemplateService");
-      Runtime.start("gui", "GUIService");
+      Runtime.start("servo", "Servo");
+      Runtime.start("gui", "SwingGui");
 
     } catch (Exception e) {
       Logging.logError(e);
@@ -52,3 +53,6 @@ public class _TemplateService extends Service {
   }
 
 }
+
+
+// cake eaten 

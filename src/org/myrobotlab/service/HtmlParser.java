@@ -14,13 +14,12 @@ public class HtmlParser extends Service {
   public final static Logger log = LoggerFactory.getLogger(HtmlParser.class);
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
 
     try {
 
       Runtime.start("jsoup", "Jsoup");
-      Runtime.start("gui", "GUIService");
+      Runtime.start("gui", "SwingGui");
 
     } catch (Exception e) {
       Logging.logError(e);
@@ -45,6 +44,8 @@ public class HtmlParser extends Service {
     meta.addDependency("org.jsoup", "1.8.3");
     meta.addDescription("html parser");
     meta.addCategory("document");
+    // Set to false since no JSoup service exists
+    meta.setAvailable(false);
     return meta;
   }
 

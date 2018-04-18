@@ -47,199 +47,176 @@ import org.slf4j.Logger;
  */
 public class Clock extends Service {
 
-  public class ClockThread implements Runnable {
-    public Thread thread = null;
+	public class ClockThread implements Runnable {
+		public Thread thread = null;
+		ClockThread() {
+			thread = new Thread(this, getName() + "_ticking_thread");
+			thread.start();
+		}
 
-    ClockThread() {
-      thread = new Thread(this, getName() + "_ticking_thread");
-      thread.start();
-    }
+		@Override
+		public void run() {
+			
+			try {
+				
+				while (isClockRunning) {
+					Date now = new Date();
+					Iterator<ClockEvent> i = events.iterator();
+					while (i.hasNext()) {
+						ClockEvent event = i.next();
+						if (now.after(event.time)) {
+							// TODO repeat - don't delete set time forward
+							// interval
+							send(event.name, event.method, event.data);
+							
+							i.remove();
+						}
+					}
+					
+				if (!NoExecutionAtFirstClockStarted){invoke("pulse", new Date());}
+				Thread.sleep(interval);
+				NoExecutionAtFirstClockStarted=false;
+				}
+			} catch (InterruptedException e) {
+				log.info("ClockThread interrupt");
+				isClockRunning = false;
+			}
+		}
+	}
 
-    @Override
-    public void run() {
-      try {
-        while (isClockRunning == true) {
-          Date now = new Date();
-          Iterator<ClockEvent> i = events.iterator();
-          while (i.hasNext()) {
-            ClockEvent event = i.next();
-            if (now.after(event.time)) {
-              // TODO repeat - don't delete set time forward
-              // interval
-              send(event.name, event.method, event.data);
-              i.remove();
-            }
-          }
-          invoke("pulse", new Date());
-          Thread.sleep(interval);
-        }
-      } catch (InterruptedException e) {
-        log.info("ClockThread interrupt");
-        isClockRunning = false;
-      }
-    }
-  }
+	private static final long serialVersionUID = 1L;
 
-  private static final long serialVersionUID = 1L;
+	public final static Logger log = LoggerFactory.getLogger(Clock.class.getCanonicalName());
+	public boolean isClockRunning;
 
-  public final static Logger log = LoggerFactory.getLogger(Clock.class.getCanonicalName());
-  public boolean isClockRunning;
+	public int interval = 1000;
 
-  public int interval = 1000;
+	public transient ClockThread myClock = null;
 
-  public transient ClockThread myClock = null;
+	// FIXME
+	ArrayList<ClockEvent> events = new ArrayList<ClockEvent>();
 
-  // FIXME
-  ArrayList<ClockEvent> events = new ArrayList<ClockEvent>();
+	private boolean NoExecutionAtFirstClockStarted=false;
 
-  public Clock(String n) {
-    super(n);
-  }
+  private boolean restartMe;
 
-  public void addClockEvent(Date time, String name, String method, Object... data) {
-    ClockEvent event = new ClockEvent(time, name, method, data);
-    events.add(event);
-  }
+	public Clock(String n) {
+		super(n);
+	}
 
-  // clock started event
-  public void clockStarted() {
-  }
+	public void addClockEvent(Date time, String name, String method, Object... data) {
+		ClockEvent event = new ClockEvent(time, name, method, data);
+		events.add(event);
+	}
 
-  public void clockStopped() {
-  }
+	// clock started event
+	public void clockStarted() {
+	  isClockRunning = true;
+	  log.info("clock started");
+	  broadcastState();
+	}
 
-  public Date pulse(Date time) {
-    return time;
-  }
+	public void clockStopped() {
+	  isClockRunning = false;
+	  broadcastState();
+	  if (restartMe)
+	  {
+	    sleep(10);
+	    startClock(NoExecutionAtFirstClockStarted);
+	  }
+	   
+	}
 
-  public void setInterval(Integer milliseconds) {
-    interval = milliseconds;
-    broadcastState();
-  }
+	public Date pulse(Date time) {
+		return time;
+	}
 
-  public void startClock() {
-    if (myClock == null) {
-      info("starting clock");
-      isClockRunning = true;
-      myClock = new ClockThread();
-      invoke("clockStarted");
+	public void setInterval(Integer milliseconds) {
+		interval = milliseconds;
+		broadcastState();
+	}
+
+	public void startClock(boolean NoExecutionAtFirstClockStarted) {
+		if (myClock == null) {
+			this.NoExecutionAtFirstClockStarted=NoExecutionAtFirstClockStarted;
+			// info("starting clock");
+			myClock = new ClockThread();
+			invoke("clockStarted");
+		} else {
+			log.warn("clock already started");
+		}
+	}
+	
+  public void restartClock(boolean NoExecutionAtFirstClockStarted) {
+    this.NoExecutionAtFirstClockStarted=NoExecutionAtFirstClockStarted;
+    if (!isClockRunning) {
+    startClock(NoExecutionAtFirstClockStarted);
     } else {
-      log.warn("clock already started");
+    stopClock(true);
     }
+    
+  }	
+	
+	public void startClock() {
+		startClock(false);
+	}
+	
+	public void restartClock() {
+	  restartClock(false);
+	}
+	
+	public void stopClock() {
+	  stopClock(false);
+	}
+	
+	public void stopClock(boolean restartMe) {
+	  this.restartMe=restartMe;
+		if (myClock != null) {
+			// info("stopping clock");
+			log.info("stopping " + getName() + " myClock");
+			myClock.thread.interrupt();
+			myClock.thread = null;
+			myClock = null;
+			// have requestors broadcast state !
+			// broadcastState();
+			invoke("clockStopped");
+		} else {
+			log.warn("clock already stopped");
+		}		
+	}
 
-    broadcastState();
-  }
+	@Override
+	public void stopService() {
+		stopClock();
+		super.stopService();
+	}
 
-  public void stopClock() {
+	public static void main(String[] args) throws Exception {
+		LoggingFactory.init(Level.INFO);
 
-    if (myClock != null) {
-      info("stopping clock");
-      log.info("stopping " + getName() + " myClock");
-      isClockRunning = false;
-      myClock.thread.interrupt();
-      myClock.thread = null;
-      myClock = null;
-      // have requestors broadcast state !
-      // broadcastState();
-      invoke("clockStopped");
-    } else {
-      log.warn("clock already stopped");
-    }
+		Clock clock = (Clock) Runtime.start("clock", "Clock");
+		clock.setInterval(1000);
+		clock.restartClock();
+		sleep(2000);
+		clock.restartClock();
+		sleep(2000);
+		clock.stopClock();   
+	}
 
-    isClockRunning = false;
-    broadcastState();
-  }
+	/**
+	 * This static method returns all the details of the class without it having
+	 * to be constructed. It has description, categories, dependencies, and peer
+	 * definitions.
+	 * 
+	 * @return ServiceType - returns all the data
+	 * 
+	 */
+	static public ServiceType getMetaData() {
 
-  @Override
-  public void stopService() {
-    stopClock();
-    super.stopService();
-  }
+		ServiceType meta = new ServiceType(Clock.class.getCanonicalName());
+		meta.addDescription("used to generate pulses and recurring messages");
+		meta.addCategory("scheduling");
 
-  public static void main(String[] args) throws Exception {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
-
-    String test = "tcp";
-
-    if ("tcp".equals(test)) {
-      // TCP CONNECT WORKS BEGIN ---------------------------------
-      try {
-
-        int i = 4;
-
-        // for (int i = 1; i < 4; ++i) {
-        Runtime.main(new String[] { "-runtimeName", String.format("runtime.%d", i) });
-
-        // auto-grab the next port if can not listen???
-        RemoteAdapter remote = (RemoteAdapter) Runtime.start(String.format("remote%d", i), "RemoteAdapter");
-        // remote.setUDPPort(6868);
-        // remote.setTCPPort(6868);
-        // remote.scan();
-        // remote.setDefaultPrefix("raspi");
-        Runtime.start(String.format("clock%d", i), "Clock");
-        // Runtime.start(String.format("gui", i), "GUIService");
-        // Runtime.start(String.format("python", i), "Python");
-
-        remote.connect("tcp://127.0.0.1:6767");
-        // Runtime.start(String.format("p%d", i), "Python");
-        // remote.scan();
-
-        // remote.startListening();
-        // remote.connect("tcp://127.0.0.1:6767");
-
-        // FIXME - sholdn't this be sendRemote ??? or at least
-        // in an interface
-        // remote.sendRemote(uri, msg);
-        // xmpp1.sendMessage("xmpp 2", "robot02 02");
-        // }
-      } catch (Exception e) {
-        Logging.logError(e);
-      }
-      // TCP CONNECT WORKS END ---------------------------------
-
-    } else if ("xmpp".equals(test)) {
-
-      // XMPP CONNECT WORKS BEGIN ---------------------------------
-      int i = 2;
-
-      Runtime.main(new String[] { "-runtimeName", String.format("r%d", i) });
-      Security security = (Security) Runtime.createAndStart("security", "Security");
-      security.addUser("incubator incubator");
-      security.setGroup("incubator incubator", "authenticated");
-      security.allowExportByType("XMPP", false);
-      security.allowExportByType("Security", false);
-      security.allowExportByType("Runtime", false);
-      Xmpp xmpp1 = (Xmpp) Runtime.createAndStart(String.format("xmpp%d", i), "XMPP");
-      Clock clock = (Clock) Runtime.createAndStart(String.format("clock%d", i), "Clock");
-      Runtime.createAndStart(String.format("gui%d", i), "GUIService");
-
-      xmpp1.connect("talk.google.com", 5222, "robot02@myrobotlab.org", "mrlRocks!");
-
-      Message msg = null;
-
-      msg = xmpp1.createMessage("", "register", clock);
-      String base64 = CodecUtils.msgToBase64(msg);
-      xmpp1.sendMessage(base64, "incubator incubator");
-
-      // XMPP CONNECT WORKS END ---------------------------------
-    }
-  }
-
-  /**
-   * This static method returns all the details of the class without it having
-   * to be constructed. It has description, categories, dependencies, and peer
-   * definitions.
-   * 
-   * @return ServiceType - returns all the data
-   * 
-   */
-  static public ServiceType getMetaData() {
-
-    ServiceType meta = new ServiceType(Clock.class.getCanonicalName());
-    meta.addDescription("used to generate pulses and recurring messages");
-    meta.addCategory("scheduling");
-
-    return meta;
-  }
+		return meta;
+	}
 }

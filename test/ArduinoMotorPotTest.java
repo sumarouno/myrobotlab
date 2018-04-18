@@ -9,17 +9,15 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.service.Arduino;
-import org.myrobotlab.service.Motor;
-import org.myrobotlab.service.PID2;
+import org.myrobotlab.service.MotorDualPwm;
+import org.myrobotlab.service.Pid;
 import org.myrobotlab.service.Runtime;
 import org.myrobotlab.service.data.SensorData;
-import org.myrobotlab.service.interfaces.MotorController;
-import org.myrobotlab.service.interfaces.SensorDataListener;
 import org.myrobotlab.test.TestUtils;
 import org.slf4j.Logger;
 
 @Ignore
-public class ArduinoMotorPotTest implements SensorDataListener {
+public class ArduinoMotorPotTest {
 
   //public boolean uploadSketch = false;
   public boolean uploadSketch = false;
@@ -37,9 +35,9 @@ public class ArduinoMotorPotTest implements SensorDataListener {
   private double ki = 0.020;
   private double kd = 0.020;
 
-  private PID2 pid;
+  private Pid pid;
   private String key = "test";
-  private Motor motor;
+  private MotorDualPwm motor;
 
   private int count = 0;
   private int rate = 5;
@@ -97,11 +95,11 @@ public class ArduinoMotorPotTest implements SensorDataListener {
       uploadMRLComm(port, boardType);
     
     boolean enableLoadTiming = false;
-    // Runtime.create("gui", "GUIService");
+    // Runtime.create("gui", "SwingGui");
     // initialize the logger 
     TestUtils.initEnvirionment();
     // Create the pid controller 
-    pid = (PID2)Runtime.createAndStart("pid", "PID2");
+    pid = (Pid)Runtime.createAndStart("pid", "Pid");
     // # set the pid parameters KP KI KD  (for now just porportial control)
     pid.setPID(key, kp, ki, kd);
     int direction = 1;
@@ -119,9 +117,9 @@ public class ArduinoMotorPotTest implements SensorDataListener {
     arduino.connect(port);
     // wait for the arduino to actually connect!
     // Start the motor and attach it to the arduino.
-    motor = (Motor)Runtime.createAndStart("motor", "Motor");
+    motor = (MotorDualPwm)Runtime.createAndStart("motor", "Motor");
     motor.setPwmPins(leftPwm, rightPwm);
-    motor.setController((MotorController)arduino);
+    motor.attachMotorController(arduino);
     // Sensor callback
     // arduino.analogReadPollingStart(potPin);
     // arduino.sensorAttach(this);
@@ -133,7 +131,7 @@ public class ArduinoMotorPotTest implements SensorDataListener {
     // arduino.sensorAttach(feedbackPot);
     
     if (enableLoadTiming) {
-      arduino.enableBoardStatus();
+      arduino.enableBoardInfo(true);
     }
     // stop the motor initially
     motor.move(0);
@@ -142,7 +140,7 @@ public class ArduinoMotorPotTest implements SensorDataListener {
 
   }
 
-  @Override
+  
   public void onSensorData(SensorData event) {
     // about we downsample this call?
 	int[] data = (int[])event.getData();
@@ -286,7 +284,6 @@ public class ArduinoMotorPotTest implements SensorDataListener {
     return sb.toString();
   }
 
-@Override
 public boolean isLocal() {
 	// TODO Auto-generated method stub
 	return true;

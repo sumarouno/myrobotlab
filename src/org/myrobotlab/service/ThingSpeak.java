@@ -8,14 +8,14 @@ import org.myrobotlab.logging.Level;
 import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.logging.Logging;
 import org.myrobotlab.logging.LoggingFactory;
-import org.myrobotlab.net.HTTPRequest;
+import org.myrobotlab.net.HttpRequest;
 import org.myrobotlab.service.data.Pin;
 import org.slf4j.Logger;
 
 //import org.slf4j.LoggerFactory;
 
 /**
- * @author GroG &
+ * @author GroG &amp;
  * 
  *         References : http://community.thingspeak.com/documentation/api/
  * 
@@ -39,8 +39,7 @@ public class ThingSpeak extends Service {
   int intervalSeconds = 20;
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.DEBUG);
+    LoggingFactory.init(Level.DEBUG);
 
     try {
       // BasicConfigurator.
@@ -52,7 +51,7 @@ public class ThingSpeak extends Service {
       thingSpeak.startService();
 
       /*
-       * GUIService gui = new GUIService("gui"); gui.startService();
+       * SwingGui gui = new SwingGui("gui"); gui.startService();
        */
     } catch (Exception e) {
       Logging.logError(e);
@@ -118,7 +117,7 @@ public class ThingSpeak extends Service {
         url.append(String.format("&field%d=%s", i + 1, o.toString()));
       }
 
-      HTTPRequest request = new HTTPRequest(url.toString());
+      HttpRequest request = new HttpRequest(url.toString());
       result = request.getString();
       log.info(String.format("ThingSpeak returned %s", result));
 
@@ -153,7 +152,7 @@ public class ThingSpeak extends Service {
 
     ServiceType meta = new ServiceType(ThingSpeak.class.getCanonicalName());
     meta.addDescription("Service which can relay data to a ThingSpeak account");
-    meta.addCategory("data", "cloud");
+    meta.addCategory("connectivity", "cloud");
     return meta;
   }
 

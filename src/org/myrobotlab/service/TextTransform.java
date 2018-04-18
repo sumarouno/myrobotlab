@@ -17,14 +17,13 @@ public class TextTransform extends Service implements TextListener, TextPublishe
   public final static Logger log = LoggerFactory.getLogger(TextTransform.class);
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
 
     try {
 
       Runtime.start("transform", "TextTransform");
 
-      Runtime.start("gui", "GUIService");
+      Runtime.start("gui", "SwingGui");
 
     } catch (Exception e) {
       Logging.logError(e);
@@ -64,6 +63,9 @@ public class TextTransform extends Service implements TextListener, TextPublishe
     ServiceType meta = new ServiceType(TextTransform.class.getCanonicalName());
     meta.addDescription("TextTransform");
     meta.addCategory("data", "filter");
+   
+    // FIXME - this thing is at least 3 years old .. and does nothing I think :P
+    meta.setAvailable(false);
     return meta;
   }
 

@@ -11,7 +11,7 @@ import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.logging.Logging;
 import org.myrobotlab.logging.LoggingFactory;
 import org.myrobotlab.net.MjpegServer;
-import org.myrobotlab.service.interfaces.VideoSink;
+import org.myrobotlab.service.abstracts.AbstractVideoSink;
 import org.myrobotlab.service.interfaces.VideoSource;
 import org.slf4j.Logger;
 
@@ -28,23 +28,21 @@ import org.slf4j.Logger;
  * 
  */
 
-public class VideoStreamer extends VideoSink {
+public class VideoStreamer extends AbstractVideoSink /*extends Service implements VideoSink*/ {
 
   private static final long serialVersionUID = 1L;
 
   public final static Logger log = LoggerFactory.getLogger(VideoStreamer.class.getCanonicalName());
-
   public int listeningPort = 9090;
   transient private MjpegServer server;
   public boolean mergeSteams = true;
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.INFO);
+    LoggingFactory.init(Level.INFO);
     try {
 
       VideoStreamer streamer = (VideoStreamer) Runtime.createAndStart("streamer", "VideoStreamer");
-      OpenCV opencv = (OpenCV) Runtime.createAndStart("opencv", "OpenCV");
+      Vision opencv = (Vision) Runtime.createAndStart("opencv", "OpenCV");
 
       // streamer.start();
       streamer.attach(opencv);
@@ -52,7 +50,7 @@ public class VideoStreamer extends VideoSink {
       opencv.addFilter("pyramidDown", "PyramidDown");
       opencv.capture();
 
-      Runtime.createAndStart("gui", "GUIService");
+      Runtime.createAndStart("gui", "SwingGui");
 
     } catch (Exception e) {
       Logging.logError(e);
@@ -63,10 +61,13 @@ public class VideoStreamer extends VideoSink {
     super(name);
   }
 
-  public boolean attach(String videoSource) {
-    VideoSource vs = (VideoSource) Runtime.getService(videoSource);
-    attach(vs);
-    return true;
+  public void attach(String videoSource) {
+    try {
+      VideoSource vs = (VideoSource) Runtime.getService(videoSource);
+      attach(vs);
+    } catch (Exception e) {
+      error(e);
+    }
   }
 
   @Override
@@ -91,10 +92,9 @@ public class VideoStreamer extends VideoSink {
     super.releaseService();
   }
 
-  /**
+  /*
    * sets port for mjpeg feed - default is 9090
    * 
-   * @param port
    */
   public void setPort(int port) {
     listeningPort = port;

@@ -20,16 +20,15 @@ public class BeagleBoardBlack extends Service {
   public final static Logger log = LoggerFactory.getLogger(BeagleBoardBlack.class);
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.WARN);
+    LoggingFactory.init(Level.WARN);
 
     try {
       BeagleBoardBlack bbb = new BeagleBoardBlack("bbb");
       bbb.startService();
 
-      Runtime.createAndStart("gui", "GUIService");
+      Runtime.createAndStart("gui", "SwingGui");
       /*
-       * GUIService gui = new GUIService("gui"); gui.startService();
+       * SwingGui gui = new SwingGui("gui"); gui.startService();
        */
     } catch (Exception e) {
       Logging.logError(e);

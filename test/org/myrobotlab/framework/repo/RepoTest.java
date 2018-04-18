@@ -54,7 +54,7 @@ public class RepoTest implements RepoInstallListener {
     assertTrue(repo != null);
   }
 
-  /**
+  /*
    * public constructor only because serialization might require it - otherwise
    * this should be private.
    * 
@@ -211,8 +211,7 @@ public class RepoTest implements RepoInstallListener {
   public static void main(String[] args) {
     try {
 
-      LoggingFactory.getInstance().configure();
-      LoggingFactory.getInstance().setLevel(Level.INFO);
+      LoggingFactory.init(Level.INFO);
 
       /*
        * 

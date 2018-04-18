@@ -57,6 +57,7 @@ angular.module('mrlapp.service.SerialGui', [])
     //-> you will receive all messages routed to your service here
     // FIXME - why this function on the scope? why is it on gui ? - i believe it should be on this.onMsg
     this.onMsg = function(msg) {
+    	var maxLength = 1000;
         //$log.info('CALLBACK - ' + msg.method);
         switch (msg.method) {
         case 'onPortNames':
@@ -81,14 +82,17 @@ angular.module('mrlapp.service.SerialGui', [])
         case 'onRX':
             $scope.rx += ' ' + msg.data[0];
             ++$scope.rxCount;
-            if ($scope.rx.length > 400) {
-                $scope.rx = $scope.rx.substring($scope.rx.length - 400);
+            if ($scope.rx.length > maxLength) {
+                $scope.rx = $scope.rx.substring($scope.rx.length - maxLength);
             }
             $scope.$apply();
             break;
         case 'onTX':
             ++$scope.txCount;
             $scope.tx += msg.data[0] + ' ';
+            if ($scope.tx.length > maxLength) {
+                $scope.tx = $scope.tx.substring($scope.tx.length - maxLength);
+            }
             $scope.$apply();
             break;
         default:
@@ -98,16 +102,12 @@ angular.module('mrlapp.service.SerialGui', [])
     }
     ;
     
-    
-    // FIXME - need a button for actively "monitoring" which adds or removes subscriptions !!!!
-    // mrl.subscribe($scope.service.name, 'publishRX'); testing ...
-    // mrl.subscribe($scope.service.name, 'publishTX');
     mrl.subscribe($scope.service.name, 'publishState');
-    mrl.subscribe($scope.service.name, 'refresh');
+    mrl.subscribe($scope.service.name, 'getPortNames');
     mrl.subscribe($scope.service.name, 'publishStats');
     
     mrl.sendTo($scope.service.name, 'broadcastState');
-    mrl.sendTo($scope.service.name, 'refresh');
+    mrl.sendTo($scope.service.name, 'getPortNames');
     
     $scope.monitor = function() {
         // mrl.sendTo($scope.service.name, 'refresh');
@@ -122,7 +122,7 @@ angular.module('mrlapp.service.SerialGui', [])
     }
     
     $scope.refresh = function() {
-        mrl.sendTo($scope.service.name, 'refresh');
+        mrl.sendTo($scope.service.name, 'getPortNames');
     }
     
     $scope.disconnect = function() {

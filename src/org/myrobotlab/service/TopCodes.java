@@ -37,8 +37,7 @@ public class TopCodes extends Service {
   transient Scanner scanner = new Scanner();
 
   public static void main(String[] args) {
-    LoggingFactory.getInstance().configure();
-    LoggingFactory.getInstance().setLevel(Level.DEBUG);
+    LoggingFactory.init(Level.DEBUG);
 
     try {
       Runtime runtime = Runtime.getInstance();
@@ -63,11 +62,10 @@ public class TopCodes extends Service {
     }
   }
 
-  /**
+  /*
    * Static list of third party dependencies for this service. The list will be
    * consumed by Ivy to download and manage the appropriate resources
    * 
-   * @return
    */
 
   public TopCodes(String n) {
